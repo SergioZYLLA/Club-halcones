@@ -77,12 +77,40 @@ export default function AdminPage() {
   }
 
   // Función para eliminar
-  async function eliminarMiembro(id: string) {
-    if (confirm("¿Eliminar a este Halcón?")) {
-      await supabase.from('miembros').delete().eq('id', id);
-      cargarMiembros();
+  async function eliminarMiembro(miembro: Miembro) {
+  if (confirm(`¿Eliminar a ${miembro.nombre}?`)) {
+    // 1. Eliminar el registro
+    const { error: deleteError } = await supabase
+      .from('miembros')
+      .delete()
+      .eq('id', miembro.id);
+
+    if (deleteError) {
+      console.error("Error al eliminar:", deleteError.message);
+      return;
     }
+
+    // 2. Traer los que estaban debajo de él para reordenar
+    const { data: posteriores } = await supabase
+      .from('miembros')
+      .select('id, posicion')
+      .eq('brazo', miembro.brazo)
+      .gt('posicion', miembro.posicion);
+
+    // 3. Si hay miembros después, bajarles una posición
+    if (posteriores && posteriores.length > 0) {
+      for (const p of posteriores) {
+        await supabase
+          .from('miembros')
+          .update({ posicion: p.posicion - 1 })
+          .eq('id', p.id);
+      }
+    }
+
+    // 4. Refrescar la tabla en pantalla
+    cargarMiembros();
   }
+}
 
   // Función para subir o bajar en el ranking
   async function mover(miembro: Miembro, direccion: number) {
@@ -169,7 +197,7 @@ export default function AdminPage() {
                   <div className="flex gap-1">
                     <button onClick={() => mover(m, -1)} className="bg-gray-200 px-2 rounded">↑</button>
                     <button onClick={() => mover(m, 1)} className="bg-gray-200 px-2 rounded">↓</button>
-                    <button onClick={() => eliminarMiembro(m.id)} className="bg-red-100 text-red-600 px-2 rounded ml-2">🗑️</button>
+                    <button onClick={() => eliminarMiembro(m)} className="bg-red-100 text-red-600 px-2 rounded ml-2">🗑️</button>
                   </div>
                 </div>
               ))}
