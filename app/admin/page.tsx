@@ -55,6 +55,7 @@ export default function AdminPage() {
     const { data, error } = await supabase
       .from('miembros')
       .select('*')
+      .order('brazo', { ascending: true })   
       .order('posicion', { ascending: true });
     
     if (error) console.error("Error al cargar:", error.message);
