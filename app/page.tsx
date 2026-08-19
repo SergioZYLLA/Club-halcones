@@ -15,13 +15,20 @@ export default function RankingHalcones() {
   const [cargando, setCargando] = useState(true);
 
   // FUNCIÓN PARA CARGAR DATOS DESDE SUPABASE
+  // CORREGIDO: agregamos 'nombre' como orden secundario. Esto es solo un
+  // respaldo de seguridad: la causa real de las posiciones duplicadas
+  // (14, 15, 16, 16...) se corrige en el panel de admin (agregarMiembro
+  // y mover), pero si por alguna razón llegaran a quedar dos filas con la
+  // misma posición, al menos el orden en pantalla será consistente y no
+  // saltará entre refrescos.
   const cargarDatos = async () => {
     setCargando(true); // Ponemos a cargar cada vez que cambias de brazo
     const { data, error } = await supabase
       .from('miembros')
       .select('*')
       .eq('brazo', brazo)
-      .order('posicion', { ascending: true });
+      .order('posicion', { ascending: true })
+      .order('nombre', { ascending: true });
 
     if (error) {
       console.error("Error de Supabase:", error.message);
@@ -46,7 +53,7 @@ export default function RankingHalcones() {
   const RenderizarMiembro = ({ m, bgClass, textColor }: { m: Miembro, bgClass: string, textColor: string }) => (
     <div key={m.id} className={`flex items-center justify-between p-2 rounded-lg text-white border-b-4 border-black/20 ${bgClass}`}>
       <div className="flex items-center gap-3">
-        {/* Cambié index + 1 por m.posicion para que el número siempre coincida con la base de datos */}
+        {/* Usamos m.posicion (el valor real de la BD) para que el número siempre coincida */}
         <div className={`bg-white w-10 h-10 rounded flex items-center justify-center font-black border-2 border-black ${textColor}`}>
           {String(m.posicion).padStart(2, '0')}
         </div>
